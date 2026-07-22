@@ -594,7 +594,12 @@ A representative slice of user-facing settings (full list and defaults in
 ## Where Things Live
 
 - **Sidecar binary:** `.obsidian/plugins/local-dictation/bin/<variant>/`
-  (`cpu`, `cuda`), installed by the plugin from the matching GitHub Release.
+  (`cpu`, `cuda`), installed by the plugin from the GitHub Release named in
+  `sidecar-version.json`. Before publishing a plugin-only release, the tagged
+  workflow verifies that this tag is published and carries the complete archive
+  and checksum set, and that native/protocol compatibility inputs did not
+  change. Plugin-only releases can therefore reuse an earlier sidecar without
+  sending a new installation to a plugin-only tag.
 - **Models:** outside the vault, in the user data directory, so they aren't
   duplicated per-vault:
   - Windows: `%LOCALAPPDATA%\obsidian-local-stt\models`

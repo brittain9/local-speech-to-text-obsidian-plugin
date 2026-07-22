@@ -82,7 +82,7 @@ describe('loadSettingsAttention', () => {
     expect(loaded?.snapshot.drift).toEqual([
       {
         installedVersion: '2026.7.10',
-        pluginVersion: '2026.7.11',
+        requiredVersion: '2026.7.11',
         variant: 'cpu',
       },
     ]);
@@ -500,7 +500,7 @@ function advancedDependencies(
     modelInstallManager: {
       init: vi.fn(async () => {}),
     } as unknown as SettingsSidecarSurfaceDependencies['advanced']['modelInstallManager'],
-    pluginVersion: '2026.7.11',
+    sidecarVersion: '2026.7.11',
     refreshSettingsTab: vi.fn(),
     resolvePluginDirectory: async () => pluginDirectory,
     restartSidecar: vi.fn(async () => {}),
@@ -521,7 +521,7 @@ function attentionSurfaceDependencies(
     actions: actionSpies(),
     getSettings: () => currentSettings,
     ...(load === undefined ? {} : { load }),
-    pluginVersion: '2026.7.11',
+    sidecarVersion: '2026.7.11',
     resolvePluginDirectory: async () => pluginDirectory,
     sidecarInstallManager: manager as unknown as SidecarInstallManager,
   };
@@ -588,7 +588,7 @@ function loadDependencies(
   return {
     getCudaCompatibility: async () => COMPATIBLE,
     getSettings: () => currentSettings,
-    pluginVersion: '2026.7.11',
+    sidecarVersion: '2026.7.11',
     resolvePluginDirectory: async () => pluginDirectory,
     sidecarInstallManager: manager as unknown as SidecarInstallManager,
   };
@@ -614,7 +614,7 @@ function sectionDependencies(
     getCudaCompatibility: async () => COMPATIBLE,
     getSettings: () => currentSettings,
     load,
-    pluginVersion: '2026.7.11',
+    sidecarVersion: '2026.7.11',
     resolvePluginDirectory: async () => '/plugin',
     sidecarInstallManager: manager as unknown as SidecarInstallManager,
   };

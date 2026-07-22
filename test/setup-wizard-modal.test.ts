@@ -25,7 +25,7 @@ describe('SetupWizardModal lifecycle', () => {
       modelInstallManager: { subscribe } as unknown as ModelInstallManager,
       onCompleted: vi.fn(async () => {}),
       pluginDirectory: '/plugin',
-      pluginVersion: '2026.8.2',
+      sidecarVersion: '2026.8.2',
       postSidecarInstalled: vi.fn(async () => {}),
       sidecarConnection: {
         restart: vi.fn(async () => ({

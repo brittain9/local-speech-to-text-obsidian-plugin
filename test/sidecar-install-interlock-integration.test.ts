@@ -57,7 +57,7 @@ function createHarness() {
     app: {} as App,
     feedback: { show: feedbackShow },
     modelInstallManager: { init: modelInit } as unknown as ModelInstallManager,
-    pluginVersion: '2026.7.11',
+    sidecarVersion: '2026.7.11',
     refreshSettingsTab,
     restartSidecar,
     sidecarConnection: { shutdown },

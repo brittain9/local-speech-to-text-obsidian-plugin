@@ -78,7 +78,7 @@ describe('CUDA sidecar Settings actions', () => {
       } as unknown as ConstructorParameters<
         typeof SidecarSettingsSection
       >[1]['modelInstallManager'],
-      pluginVersion: '2026.7.11',
+      sidecarVersion: '2026.7.11',
       refreshSettingsTab: vi.fn(),
       resolvePluginDirectory: async () => pluginDirectory,
       restartSidecar: vi.fn(async () => {}),

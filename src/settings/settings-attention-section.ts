@@ -39,7 +39,7 @@ export interface SettingsAttentionSectionDependencies {
   getSettings: () => PluginSettings;
   load?: (() => Promise<LoadedSettingsAttention | null>) | undefined;
   logger?: PluginLogger | undefined;
-  pluginVersion: string;
+  sidecarVersion: string;
   resolvePluginDirectory: () => Promise<string>;
   sidecarInstallManager: SidecarInstallManager;
 }
@@ -240,7 +240,7 @@ export async function loadSettingsAttention(
           ...(cpu.status === 'installed' ? { cpu: cpu.manifest } : {}),
           ...(cuda.status === 'installed' ? { cuda: cuda.manifest } : {}),
         },
-        pluginVersion: deps.pluginVersion,
+        requiredVersion: deps.sidecarVersion,
         variants,
       }),
       manifests,
