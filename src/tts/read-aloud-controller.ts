@@ -145,7 +145,7 @@ export class ReadAloudController {
       return;
     }
     const configuration = this.resolveSynthesisConfiguration(
-      this.deps.getSettings().dictationLanguage,
+      this.deps.getSettings().readAloudLanguage,
       'playback_request',
     );
     if (configuration === null) return;
@@ -235,7 +235,7 @@ export class ReadAloudController {
       return;
     }
     const configuration = this.resolveSynthesisConfiguration(
-      this.activeLanguage ?? this.deps.getSettings().dictationLanguage,
+      this.activeLanguage ?? this.deps.getSettings().readAloudLanguage,
       'playback_request',
     );
     if (configuration === null) return;

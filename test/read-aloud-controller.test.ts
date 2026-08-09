@@ -111,6 +111,7 @@ function controllerHarness(options: {
   catalog?: ModelCatalogRecord;
   dictationLanguage?: 'auto' | 'en' | 'sr';
   installedModels?: readonly InstalledModelRecord[];
+  readAloudLanguage?: 'auto' | 'en' | 'sr';
   onModelMissing?: () => Promise<void> | void;
   selected: boolean;
   selectedVoice?: string | null;
@@ -138,6 +139,7 @@ function controllerHarness(options: {
     getSettings: () => ({
       ...DEFAULT_PLUGIN_SETTINGS,
       dictationLanguage: options.dictationLanguage ?? DEFAULT_PLUGIN_SETTINGS.dictationLanguage,
+      readAloudLanguage: options.readAloudLanguage ?? DEFAULT_PLUGIN_SETTINGS.readAloudLanguage,
       selectedTtsModel: options.selected ? TTS_SELECTION : null,
       selectedTtsVoice:
         options.selectedVoice === undefined
@@ -425,13 +427,17 @@ describe('ReadAloudController', () => {
     expect(harness.startSynthesis).toHaveBeenCalledTimes(2);
     expect(harness.startSynthesis.mock.calls[1]?.[0]).toMatchObject({
       chunks: [{ text: 'Second sentence.' }, { text: 'Third sentence.' }],
-      language: 'en',
+      language: 'na',
       speed: 1.5,
     });
   });
 
-  it('uses the dictation language and maps automatic detection to the model-neutral tag', async () => {
-    const harness = controllerHarness({ dictationLanguage: 'auto', selected: true });
+  it('uses the reading language instead of dictation language for note playback', async () => {
+    const harness = controllerHarness({
+      dictationLanguage: 'sr',
+      readAloudLanguage: 'auto',
+      selected: true,
+    });
 
     await harness.controller.read(editorFor('Speak this.', { ch: 0, line: 0 }));
 
@@ -441,7 +447,7 @@ describe('ReadAloudController', () => {
   });
 
   it('refuses a language the voice model does not declare instead of speaking it neutrally', async () => {
-    const harness = controllerHarness({ dictationLanguage: 'sr', selected: true });
+    const harness = controllerHarness({ readAloudLanguage: 'sr', selected: true });
 
     await harness.controller.read(editorFor('Speak this.', { ch: 0, line: 0 }));
 
