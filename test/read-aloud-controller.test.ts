@@ -5,7 +5,7 @@ import type {
   InstalledModelRecord,
   ModelCatalogRecord,
 } from '../src/models/model-management-types';
-import { DEFAULT_PLUGIN_SETTINGS } from '../src/settings/plugin-settings';
+import { DEFAULT_PLUGIN_SETTINGS, type PluginSettings } from '../src/settings/plugin-settings';
 import type { StartSynthesisCommand } from '../src/sidecar/protocol';
 import {
   SidecarLifecycleConflictError,
@@ -111,7 +111,7 @@ function controllerHarness(options: {
   catalog?: ModelCatalogRecord;
   dictationLanguage?: 'auto' | 'en' | 'sr';
   installedModels?: readonly InstalledModelRecord[];
-  readAloudLanguage?: 'auto' | 'en' | 'sr';
+  readAloudLanguage?: 'auto' | 'en' | 'es' | 'sr';
   onModelMissing?: () => Promise<void> | void;
   selected: boolean;
   selectedVoice?: string | null;
@@ -131,23 +131,24 @@ function controllerHarness(options: {
   const followAlong = options.followAlong ?? {
     begin: vi.fn(() => ({ setDesiredRange: vi.fn() })),
   };
+  let settings: PluginSettings = {
+    ...DEFAULT_PLUGIN_SETTINGS,
+    dictationLanguage: options.dictationLanguage ?? DEFAULT_PLUGIN_SETTINGS.dictationLanguage,
+    readAloudLanguage: options.readAloudLanguage ?? DEFAULT_PLUGIN_SETTINGS.readAloudLanguage,
+    selectedTtsModel: options.selected ? TTS_SELECTION : null,
+    selectedTtsVoice:
+      options.selectedVoice === undefined
+        ? options.selected
+          ? 'alba'
+          : null
+        : options.selectedVoice,
+  };
   const controller = new ReadAloudController({
     feedback,
     followAlong,
     getCatalog: () => options.catalog ?? TTS_CATALOG,
     getInstalledModels: () => options.installedModels ?? TTS_INSTALLED_MODELS,
-    getSettings: () => ({
-      ...DEFAULT_PLUGIN_SETTINGS,
-      dictationLanguage: options.dictationLanguage ?? DEFAULT_PLUGIN_SETTINGS.dictationLanguage,
-      readAloudLanguage: options.readAloudLanguage ?? DEFAULT_PLUGIN_SETTINGS.readAloudLanguage,
-      selectedTtsModel: options.selected ? TTS_SELECTION : null,
-      selectedTtsVoice:
-        options.selectedVoice === undefined
-          ? options.selected
-            ? 'alba'
-            : null
-          : options.selectedVoice,
-    }),
+    getSettings: () => settings,
     isDictationBusy: () => true,
     onModelMissing,
     onStateChange: vi.fn(),
@@ -169,6 +170,9 @@ function controllerHarness(options: {
     startSynthesis,
     stopDictation,
     followAlong,
+    updateSettings: (next: Partial<PluginSettings>) => {
+      settings = { ...settings, ...next };
+    },
   };
 }
 
@@ -258,11 +262,12 @@ describe('ReadAloudController', () => {
     expect(harness.controller.canReadText('Hola. ¿Cómo estás?', 'es')).toBe(true);
   });
 
-  it('keeps the translated target language when playback speed restarts synthesis', async () => {
+  it('keeps the translated target language when settings restart preview playback', async () => {
     const harness = controllerHarness({ selected: true, dictationLanguage: 'en' });
 
     await harness.controller.readText('Hola. First sentence. Second sentence.', 'es');
-    await harness.controller.applySpeed(1.25);
+    harness.updateSettings({ readAloudLanguage: 'en' });
+    await harness.controller.restartRemainingPlayback(1.25);
 
     expect(harness.startSynthesis.mock.calls[1]?.[0]).toMatchObject({
       language: 'es',
@@ -413,7 +418,7 @@ describe('ReadAloudController', () => {
     mutation.release();
   });
 
-  it('restarts settings changes from the current sentence', async () => {
+  it('uses the current reading language when settings restart note playback', async () => {
     const harness = controllerHarness({ selected: true });
     const editor = editorFor('First sentence. Second sentence. Third sentence.', {
       ch: 0,
@@ -422,12 +427,13 @@ describe('ReadAloudController', () => {
 
     await harness.controller.read(editor);
     playback.playThrough(0);
-    await harness.controller.applySpeed(1.5);
+    harness.updateSettings({ readAloudLanguage: 'es' });
+    await harness.controller.restartRemainingPlayback(1.5);
 
     expect(harness.startSynthesis).toHaveBeenCalledTimes(2);
     expect(harness.startSynthesis.mock.calls[1]?.[0]).toMatchObject({
       chunks: [{ text: 'Second sentence.' }, { text: 'Third sentence.' }],
-      language: 'na',
+      language: 'es',
       speed: 1.5,
     });
   });
