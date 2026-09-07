@@ -12,13 +12,14 @@ const FRAME_HEADER_LENGTH = 5;
 const INSTALL_TIMEOUT_MS = 10 * 60_000;
 const TRANSLATION_TIMEOUT_MS = 2 * 60_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
-const modelId =
-  process.env.LOCAL_DICTATION_HY_MT2_MODEL_ID?.trim() || 'tencent_hy_mt_2_1_8b_q4_k_m';
-const MODEL_TRIPLE = {
-  familyId: 'tencent_hy_mt',
-  modelId,
-  runtimeId: 'llama_cpp',
-};
+const configuredModelIds = (process.env.LOCAL_DICTATION_HY_MT2_MODEL_IDS || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+const modelIds =
+  configuredModelIds.length > 0
+    ? configuredModelIds
+    : [process.env.LOCAL_DICTATION_HY_MT2_MODEL_ID?.trim() || 'tencent_hy_mt_2_1_8b_q4_k_m'];
 const SOURCE_LANGUAGE = 'en';
 const TARGET_LANGUAGE = 'es';
 const TEST_MARKDOWN = `The meeting starts at nine tomorrow morning.
@@ -45,25 +46,29 @@ const sidecar = startSidecar(sidecarPath);
 
 try {
   if (!skipInstall) {
-    const installId = crypto.randomUUID();
-    sidecar.send({
-      ...MODEL_TRIPLE,
-      installId,
-      modelStorePathOverride: modelStorePath,
-      type: 'install_model',
-    });
-    const install = await sidecar.waitFor(
-      (event) =>
-        event.type === 'model_install_update' &&
-        event.installId === installId &&
-        (event.state === 'completed' || event.state === 'failed' || event.state === 'cancelled'),
-      INSTALL_TIMEOUT_MS,
-      'HY-MT model install',
-    );
-    if (install.state !== 'completed') {
-      throw new Error(
-        `HY-MT model install ended ${install.state}: ${install.message ?? 'no message'}`,
+    for (const modelId of modelIds) {
+      const installId = crypto.randomUUID();
+      sidecar.send({
+        familyId: 'tencent_hy_mt',
+        modelId,
+        runtimeId: 'llama_cpp',
+        installId,
+        modelStorePathOverride: modelStorePath,
+        type: 'install_model',
+      });
+      const install = await sidecar.waitFor(
+        (event) =>
+          event.type === 'model_install_update' &&
+          event.installId === installId &&
+          (event.state === 'completed' || event.state === 'failed' || event.state === 'cancelled'),
+        INSTALL_TIMEOUT_MS,
+        'HY-MT model install',
       );
+      if (install.state !== 'completed') {
+        throw new Error(
+          `HY-MT model install ended ${install.state}: ${install.message ?? 'no message'}`,
+        );
+      }
     }
   }
 
@@ -73,47 +78,64 @@ try {
     segmentMarkdownForTranslation,
     translatableTexts,
   } = await loadTypeScriptModule('src/translation/markdown-segmentation.ts');
-  const segments = segmentMarkdownForTranslation(TEST_MARKDOWN, {
-    protectedMarkerMode: protectedMarkerModeForTranslation(
-      'tencent_hy_mt',
-      SOURCE_LANGUAGE,
-      TARGET_LANGUAGE,
-    ),
-  });
-  const texts = translatableTexts(segments);
-  const translationId = crypto.randomUUID();
-  const startedAt = performance.now();
-  sidecar.send({
-    accelerationPreference,
-    modelSelection: { kind: 'catalog_model', ...MODEL_TRIPLE },
-    modelStorePathOverride: modelStorePath,
-    sourceLanguage: SOURCE_LANGUAGE,
-    targetLanguage: TARGET_LANGUAGE,
-    texts,
-    translationId,
-    type: 'start_translation',
-  });
-  const terminal = await sidecar.waitFor(
-    (event) =>
-      event.translationId === translationId &&
-      (event.type === 'translation_complete' || event.type === 'translation_error'),
-    TRANSLATION_TIMEOUT_MS,
-    'HY-MT translation',
-  );
-  if (terminal.type === 'translation_error') {
-    throw new Error(`HY-MT translation failed (${terminal.code}): ${terminal.message}`);
-  }
+  const results = [];
+  for (const modelId of modelIds) {
+    const segments = segmentMarkdownForTranslation(TEST_MARKDOWN, {
+      protectedMarkerMode: protectedMarkerModeForTranslation(
+        'tencent_hy_mt',
+        SOURCE_LANGUAGE,
+        TARGET_LANGUAGE,
+      ),
+    });
+    const texts = translatableTexts(segments);
+    const translationId = crypto.randomUUID();
+    const startedAt = performance.now();
+    sidecar.send({
+      accelerationPreference,
+      modelSelection: {
+        familyId: 'tencent_hy_mt',
+        kind: 'catalog_model',
+        modelId,
+        runtimeId: 'llama_cpp',
+      },
+      modelStorePathOverride: modelStorePath,
+      sourceLanguage: SOURCE_LANGUAGE,
+      targetLanguage: TARGET_LANGUAGE,
+      texts,
+      translationId,
+      type: 'start_translation',
+    });
+    const terminal = await sidecar.waitFor(
+      (event) =>
+        event.translationId === translationId &&
+        (event.type === 'translation_complete' || event.type === 'translation_error'),
+      TRANSLATION_TIMEOUT_MS,
+      'HY-MT translation',
+    );
+    if (terminal.type === 'translation_error') {
+      throw new Error(
+        `HY-MT translation failed for ${modelId} (${terminal.code}): ${terminal.message}`,
+      );
+    }
 
-  const rebuilt = rebuildTranslatedMarkdown(segments, terminal.translations);
-  assertSmokeOutput(rebuilt, texts.length, terminal.translations);
-  process.stdout.write(
-    `${JSON.stringify({
+    const rebuilt = rebuildTranslatedMarkdown(segments, terminal.translations);
+    assertSmokeOutput(rebuilt, texts.length, terminal.translations);
+    results.push({
       inferenceMs: Math.round(performance.now() - startedAt),
-      modelStorePath,
-      sidecarPath,
+      modelId,
       translatedMarkdown: rebuilt.text,
-    })}\n`,
-  );
+    });
+  }
+  const output =
+    results.length === 1
+      ? {
+          inferenceMs: results[0].inferenceMs,
+          modelStorePath,
+          sidecarPath,
+          translatedMarkdown: results[0].translatedMarkdown,
+        }
+      : { modelStorePath, models: results, sidecarPath };
+  process.stdout.write(`${JSON.stringify(output)}\n`);
 } finally {
   await sidecar.stop();
 }

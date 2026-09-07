@@ -194,6 +194,12 @@ fn main() -> Result<()> {
             .as_ref()
             .is_none_or(|model| model.path != work.model_path || model.use_gpu != work.use_gpu)
         {
+            // llama.cpp permits only one backend to be initialized in a process.
+            // Drop the previous model (and its backend) before initializing a
+            // different selection. Besides avoiding BackendAlreadyInitialized,
+            // this prevents a transient two-model memory spike when switching
+            // between the 1.8B and 7B HY-MT weights.
+            drop(cached.take());
             match load_model(&work.model_path, work.use_gpu) {
                 Ok(model) => cached = Some(model),
                 Err(error) => {
