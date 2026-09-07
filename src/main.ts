@@ -76,6 +76,7 @@ import {
   SidecarNotInstalledError,
 } from './sidecar/sidecar-paths';
 import type { SidecarLaunchSpec } from './sidecar/sidecar-process';
+import { REQUIRED_SIDECAR_VERSION } from './sidecar/sidecar-release';
 import {
   detectSidecarVersionDrift,
   type SidecarVersionDrift,
@@ -344,7 +345,7 @@ export default class LocalSttPlugin extends Plugin {
         modelInstallManager: this.requireModelInstallManager(),
         openModelPicker: (options) => this.openModelPicker(options),
         openSetupWizard: () => this.openSetupWizard(),
-        pluginVersion: this.manifest.version,
+        sidecarVersion: REQUIRED_SIDECAR_VERSION,
         resolvePluginDirectory: () => this.resolvePluginDirectoryPath(),
         resetLlmTransformation: () =>
           restoreLlmTransformationDefaults({
@@ -530,7 +531,7 @@ export default class LocalSttPlugin extends Plugin {
         });
       },
       pluginDirectory,
-      pluginVersion: this.manifest.version,
+      sidecarVersion: REQUIRED_SIDECAR_VERSION,
       postSidecarInstalled: async () => {
         await this.restartSidecarConnection();
         const systemInfo = await this.requireSidecarConnection().getSystemInfo();
@@ -1080,11 +1081,12 @@ export default class LocalSttPlugin extends Plugin {
   }
 
   /**
-   * On startup, compare every release-installed sidecar against the current
-   * plugin version and prompt for a one-click update when any differ. Obsidian
-   * updates the plugin files but never the separately-installed sidecars, so
-   * they silently fall out of sync after an update. Self-contained: every
-   * failure path is swallowed so this can never disrupt startup.
+   * On startup, compare every release-installed sidecar against the version
+   * required by this plugin build and prompt for a one-click update when any
+   * differ. Obsidian updates plugin files but never separately-installed
+   * sidecars, but a plugin-only release intentionally keeps its compatible
+   * sidecar. Self-contained: every failure path is swallowed so this can never
+   * disrupt startup.
    */
   private async checkSidecarVersionDrift(): Promise<void> {
     if (!IS_PRODUCTION_BUILD) {
@@ -1112,8 +1114,8 @@ export default class LocalSttPlugin extends Plugin {
     try {
       drift = await detectSidecarVersionDrift({
         pluginDirectory,
-        pluginVersion: this.manifest.version,
         preferredVariant: this.settings.accelerationPreference === 'cpu_only' ? 'cpu' : 'cuda',
+        requiredVersion: REQUIRED_SIDECAR_VERSION,
         supportsCuda: isCudaSidecarUsable(await this.getCudaCompatibility()),
       });
     } catch (error) {
@@ -1148,10 +1150,10 @@ export default class LocalSttPlugin extends Plugin {
       key: 'sidecar-version-drift',
       message:
         variants.length === 2
-          ? t('notice.sidecarVersionDrift.cpuAndCuda', { version: this.manifest.version })
+          ? t('notice.sidecarVersionDrift.cpuAndCuda', { version: REQUIRED_SIDECAR_VERSION })
           : variants[0] === 'cuda'
-            ? t('notice.sidecarVersionDrift.cuda', { version: this.manifest.version })
-            : t('notice.sidecarVersionDrift.cpu', { version: this.manifest.version }),
+            ? t('notice.sidecarVersionDrift.cuda', { version: REQUIRED_SIDECAR_VERSION })
+            : t('notice.sidecarVersionDrift.cpu', { version: REQUIRED_SIDECAR_VERSION }),
     });
   }
 
@@ -1161,7 +1163,7 @@ export default class LocalSttPlugin extends Plugin {
       feedback: this.feedback,
       logger: this.logger,
       modelInstallManager: this.requireModelInstallManager(),
-      pluginVersion: this.manifest.version,
+      sidecarVersion: REQUIRED_SIDECAR_VERSION,
       refreshSettingsTab: () => {
         // No-op: the settings tab re-reads install manifests on each render, so
         // a reinstall from this startup notice needs no explicit refresh.

@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
+      sidecar_version: ${{ steps.sidecar-version.outputs.value }}
       notes_path: ${{ steps.notes.outputs.path }}
       node_version: ${{ steps.build-config.outputs.node-version }}
       rust_toolchain: ${{ steps.build-config.outputs.rust-toolchain }}
@@ -47,6 +48,31 @@ jobs:
       - id: version
         name: Resolve release version
         run: echo "value=$(node scripts/read-release-version.mjs)" >> "$GITHUB_OUTPUT"
+
+      - id: sidecar-version
+        name: Resolve required sidecar version
+        run: echo "value=$(node scripts/read-sidecar-version.mjs)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify referenced sidecar release assets
+        if: steps.version.outputs.value != steps.sidecar-version.outputs.value
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIDECAR_VERSION: ${{ steps.sidecar-version.outputs.value }}
+        run: |
+          metadata_path="$RUNNER_TEMP/referenced-sidecar-release.json"
+          checksums_dir="$RUNNER_TEMP/referenced-sidecar-checksums"
+          mkdir -p "$checksums_dir"
+          gh release view "$SIDECAR_VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft,assets > "$metadata_path"
+          gh release download "$SIDECAR_VERSION" --repo "$GITHUB_REPOSITORY" --pattern checksums.txt --dir "$checksums_dir"
+          node scripts/verify-referenced-sidecar-release.mjs --metadata "$metadata_path" --checksums "$checksums_dir/checksums.txt"
+
+      - name: Verify sidecar compatibility boundary
+        if: steps.version.outputs.value != steps.sidecar-version.outputs.value
+        env:
+          SIDECAR_VERSION: ${{ steps.sidecar-version.outputs.value }}
+        run: |
+          git fetch --no-tags origin "refs/tags/$SIDECAR_VERSION:refs/tags/$SIDECAR_VERSION"
+          node scripts/verify-sidecar-compatibility.mjs --base "$SIDECAR_VERSION"
 
       - name: Validate pushed tag
         if: github.event_name == 'push'
@@ -89,8 +115,10 @@ jobs:
             styles.css
 
   build-sidecar-posix:
-    # Start the native build as soon as version and notes are validated; release
-    # publication depends only on successful production builds and packaging.
+    # A plugin-only release reuses the last compatible sidecar release and skips
+    # every native build. Matching versions declare that this tag publishes a
+    # new sidecar set.
+    if: needs.metadata.outputs.version == needs.metadata.outputs.sidecar_version
     needs:
       - metadata
     permissions:
@@ -204,6 +232,7 @@ jobs:
 
   build-sidecar-windows:
     # See build-sidecar-posix: metadata-only dependency, publish keeps the gate.
+    if: needs.metadata.outputs.version == needs.metadata.outputs.sidecar_version
     needs:
       - metadata
     permissions:
@@ -327,6 +356,10 @@ jobs:
       - plugin-bundle
       - build-sidecar-posix
       - build-sidecar-windows
+    # GitHub normally skips a dependent job when any need is skipped. Sidecar
+    # jobs are intentionally skipped for plugin-only releases, so allow skipped
+    # needs while still refusing any failure or cancellation.
+    if: ${{ always() && !failure() && !cancelled() }}
     permissions:
       contents: write
       id-token: write
@@ -349,14 +382,20 @@ jobs:
           path: dist/plugin-bundle
 
       - name: Download sidecar archives
+        if: needs.metadata.outputs.version == needs.metadata.outputs.sidecar_version
         uses: actions/download-artifact@v8
         with:
           pattern: sidecar-*
           path: dist/release
           merge-multiple: true
 
-      - name: Assemble release files
+      - name: Assemble plugin-only release files
+        if: needs.metadata.outputs.version != needs.metadata.outputs.sidecar_version
         run: node scripts/assemble-release-files.mjs
+
+      - name: Assemble release files with sidecars
+        if: needs.metadata.outputs.version == needs.metadata.outputs.sidecar_version
+        run: node scripts/assemble-release-files.mjs --sidecars
 
       - name: Upload dry-run bundle
         if: github.event_name == 'workflow_dispatch'

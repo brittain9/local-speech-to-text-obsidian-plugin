@@ -82,7 +82,7 @@ interface SettingsTabDependencies {
   modelInstallManager: ModelInstallManager;
   openModelPicker: (options?: ModelPickerOptions) => Promise<void>;
   openSetupWizard: () => Promise<void>;
-  pluginVersion: string;
+  sidecarVersion: string;
   resolvePluginDirectory: () => Promise<string>;
   resetLlmTransformation: () => Promise<void>;
   restartSidecar: () => Promise<void>;
@@ -550,7 +550,7 @@ export class LocalSttSettingTab extends PluginSettingTab {
           },
           getSettings: this.dependencies.getSettings,
           logger: this.dependencies.logger,
-          pluginVersion: this.dependencies.pluginVersion,
+          sidecarVersion: this.dependencies.sidecarVersion,
           resolvePluginDirectory: this.dependencies.resolvePluginDirectory,
           sidecarInstallManager: this.dependencies.sidecarInstallManager,
         },
@@ -782,7 +782,7 @@ export class LocalSttSettingTab extends PluginSettingTab {
       feedback: this.dependencies.feedback,
       logger: this.dependencies.logger,
       modelInstallManager: this.dependencies.modelInstallManager,
-      pluginVersion: this.dependencies.pluginVersion,
+      sidecarVersion: this.dependencies.sidecarVersion,
       refreshSettingsTab: () => {
         this.refreshSettingsTab();
       },

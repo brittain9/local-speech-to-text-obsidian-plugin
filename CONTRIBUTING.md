@@ -163,4 +163,4 @@ Rules:
 - Every new version must sort above all previously published versions (Obsidian's updater compares versions numerically), so the four-digit year is permanent — a two-digit year like `26.x` would read as a downgrade and existing installs would stop receiving updates.
 - Versions up to and including `2026.6.9` used day-of-month numbering, so June 2026 counters continue from `2026.6.10`. From July 2026 onward the counter starts at `1` each month.
 
-A version bump touches `manifest.json`, `package.json` + `package-lock.json`, `versions.json`, and `native/Cargo.toml` + `native/Cargo.lock`.
+A plugin-only release updates `manifest.json`, `package.json` + `package-lock.json`, and `versions.json`. A release that ships new native binaries also updates `sidecar-version.json`, `native/Cargo.toml`, and `native/Cargo.lock`. See [the release runbook](docs/release/cutting-a-release.md).

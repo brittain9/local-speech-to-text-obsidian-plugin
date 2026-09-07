@@ -32,7 +32,7 @@ function installed(variant: SidecarInstallVariant, version?: string): SidecarMan
 function drift(variant: SidecarInstallVariant): SidecarVersionDrift {
   return {
     installedVersion: '2026.7.10',
-    pluginVersion: '2026.7.11',
+    requiredVersion: '2026.7.11',
     variant,
   };
 }
