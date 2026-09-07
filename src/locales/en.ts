@@ -204,6 +204,10 @@ export const en = {
   'settings.readAloud.highlightSpokenText': 'Highlight spoken text',
   'settings.readAloud.highlightSpokenTextDesc':
     'Highlight the current spoken block in the editor while Read Aloud is playing.',
+  'settings.readAloud.language': 'Reading language',
+  'settings.readAloud.languageDesc':
+    'Choose how this note should be pronounced, independently of your dictation language.',
+  'settings.readAloud.modelDefault': 'Model default',
   'settings.readAloud.voice': 'Voice',
   'settings.readAloud.voiceDesc': 'Choose from voices installed for the selected model.',
   'settings.readAloud.noVoices': 'No installed voices',

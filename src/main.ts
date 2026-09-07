@@ -752,7 +752,7 @@ export default class LocalSttPlugin extends Plugin {
       this.readAloudFollowAlong?.setEnabled(this.settings.highlightSpokenText);
     }
     if (didReadAloudSettingsChange(previousSettings, this.settings)) {
-      await this.readAloudController?.applySpeed(this.settings.ttsSpeed);
+      await this.readAloudController?.restartRemainingPlayback(this.settings.ttsSpeed);
       this.renderReadAloudStatus(this.readAloudController?.getState() ?? 'idle');
     }
     if (previousSettings.llmFeaturesEnabled !== this.settings.llmFeaturesEnabled) {

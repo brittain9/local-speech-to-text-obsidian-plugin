@@ -35,6 +35,7 @@ import { resolveReadAloudVoiceId } from './read-aloud-selection';
 
 export type ReadAloudState = 'idle' | 'paused' | 'reading';
 export type ReadAloudFallbackRange = 'entire_note' | 'from_cursor';
+type SynthesisLanguageOrigin = 'explicit' | 'read_aloud_setting';
 
 /// Read aloud speaks the requested language, but only when the selected voice
 /// model declares it. An unlisted tag would otherwise fall through to the
@@ -89,6 +90,7 @@ export class ReadAloudController {
   private activeSpeechLease: SidecarLifecycleLease | null = null;
   private activeSynthesisId: number | null = null;
   private activeLanguage: string | null = null;
+  private activeLanguageOrigin: SynthesisLanguageOrigin | null = null;
   private lastPlayedSequence = -1;
   private nextSynthesisId = 1;
   private pendingStartRevision = 0;
@@ -145,12 +147,12 @@ export class ReadAloudController {
       return;
     }
     const configuration = this.resolveSynthesisConfiguration(
-      this.deps.getSettings().dictationLanguage,
+      this.deps.getSettings().readAloudLanguage,
       'playback_request',
     );
     if (configuration === null) return;
 
-    await this.startReading(chunks, configuration, editor, source);
+    await this.startReading(chunks, configuration, editor, source, 'read_aloud_setting');
   }
 
   canReadText(text: string, language: string): boolean {
@@ -169,7 +171,7 @@ export class ReadAloudController {
     const configuration = this.resolveSynthesisConfiguration(language, 'playback_request');
     if (configuration === null) return;
 
-    await this.startReading(chunks, configuration, null, text);
+    await this.startReading(chunks, configuration, null, text, 'explicit');
   }
 
   private async startReading(
@@ -177,6 +179,7 @@ export class ReadAloudController {
     configuration: SynthesisConfiguration,
     editor: Editor | null,
     source: string,
+    languageOrigin: SynthesisLanguageOrigin,
   ): Promise<void> {
     let speechLease: SidecarLifecycleLease;
     try {
@@ -194,6 +197,7 @@ export class ReadAloudController {
     const releaseStartOperation = speechLease.retain();
     this.pendingSpeechLeases.add(speechLease);
     this.activeLanguage = configuration.language === 'na' ? 'auto' : configuration.language;
+    this.activeLanguageOrigin = languageOrigin;
     const startRevision = ++this.pendingStartRevision;
     try {
       if (this.deps.isDictationBusy()) await this.deps.stopDictation();
@@ -227,7 +231,7 @@ export class ReadAloudController {
     if (synthesisId !== null) this.deps.sidecarConnection.cancelSynthesis(synthesisId);
   }
 
-  async applySpeed(speed: number): Promise<void> {
+  async restartRemainingPlayback(speed: number): Promise<void> {
     if (!this.isActive()) return;
     const remaining = this.activeChunks.slice(this.lastPlayedSequence + 1);
     if (remaining.length === 0) {
@@ -235,7 +239,9 @@ export class ReadAloudController {
       return;
     }
     const configuration = this.resolveSynthesisConfiguration(
-      this.activeLanguage ?? this.deps.getSettings().dictationLanguage,
+      this.activeLanguageOrigin === 'read_aloud_setting'
+        ? this.deps.getSettings().readAloudLanguage
+        : (this.activeLanguage ?? this.deps.getSettings().readAloudLanguage),
       'playback_request',
     );
     if (configuration === null) return;
@@ -446,6 +452,7 @@ export class ReadAloudController {
     this.activeChunks = [];
     this.activeSynthesisId = null;
     this.activeLanguage = null;
+    this.activeLanguageOrigin = null;
     this.lastPlayedSequence = -1;
     this.sampleRate = null;
     this.followAlongReading?.setDesiredRange(null);
