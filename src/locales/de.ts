@@ -845,7 +845,6 @@ export const de = {
     'Deine installierten Übersetzungsmodelle unterstützen dieses Sprachenpaar nicht.',
   'translation.modal.incompleteModel':
     'Dem Übersetzungsmodell fehlen Dateien. Installiere es neu, um fortzufahren.',
-  'translation.modal.installModel': 'Übersetzungsmodell installieren',
   'translation.modal.translateAgain': 'Erneut übersetzen',
   'translation.modal.retryReady':
     'Die Übersetzungseinstellungen wurden geändert. Wählen Sie „Erneut übersetzen“, um die Vorschau zu aktualisieren.',
@@ -860,7 +859,7 @@ export const de = {
   'translation.notice.copyFailed': 'Übersetzung konnte nicht kopiert werden.',
   'translation.notice.tooLong': 'Übersetze höchstens {count} Zeichen auf einmal.',
   'catalog.firefox_translations_release_2026_07.summary':
-    'Schnelle lokale Übersetzung zwischen Englisch und sieben Sprachen mit in Firefox veröffentlichten Modellen.',
+    'Schnelle lokale Übersetzung mit kleinen Sprachpaketen auf Abruf und in Firefox veröffentlichten Modellen.',
   'catalog.family.firefox_translations.summary':
     'Übersetzt Notiztext lokal mit der kompakten Bergamot-Engine und Firefox-Modellen.',
 } as const satisfies TranslationCatalog;

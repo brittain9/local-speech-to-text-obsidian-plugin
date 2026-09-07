@@ -25,7 +25,6 @@ describe('TranslationController', () => {
       logger: { error: vi.fn() } as never,
       modelManager: {} as never,
       onReadAloud: vi.fn(),
-      openModelPicker: vi.fn(async () => {}),
       saveSettings: vi.fn(async () => {}),
     });
     const editor = {
@@ -41,13 +40,12 @@ describe('TranslationController', () => {
     });
   });
 
-  it('stays inert and offers model installation when no translation model is installed', async () => {
+  it('stays inert when no translation model is installed', async () => {
     Modal.instances.length = 0;
     Setting.reset();
     const worker = vi.fn();
     vi.stubGlobal('Worker', worker);
     const replaceRange = vi.fn();
-    const openModelPicker = vi.fn(async () => {});
     const controller = new TranslationController({
       app: {} as never,
       canReadAloud: () => false,
@@ -61,7 +59,6 @@ describe('TranslationController', () => {
         }),
       } as never,
       onReadAloud: vi.fn(),
-      openModelPicker,
       saveSettings: vi.fn(async () => {}),
     });
     const editor = {
@@ -73,11 +70,10 @@ describe('TranslationController', () => {
 
     await vi.waitFor(() => {
       expect(Modal.instances).toHaveLength(1);
-      expect(Setting.buttonNamed('Install translation model')).toBeDefined();
+      expect(Setting.buttonNamed('Dismiss')).toBeDefined();
     });
     expect(worker).not.toHaveBeenCalled();
     expect(replaceRange).not.toHaveBeenCalled();
-    expect(openModelPicker).not.toHaveBeenCalled();
   });
 
   it('detaches a long translation job, reopens it without duplicate inference, and keeps progress current', async () => {
@@ -122,7 +118,6 @@ describe('TranslationController', () => {
         }),
       } as never,
       onReadAloud: vi.fn(),
-      openModelPicker: vi.fn(async () => {}),
       saveSettings: vi.fn(async () => {}),
       setDetachedStatus,
       sidecarConnection: {
@@ -199,7 +194,6 @@ describe('TranslationController', () => {
         }),
       } as never,
       onReadAloud: vi.fn(),
-      openModelPicker: vi.fn(async () => {}),
       saveSettings: vi.fn(async () => {}),
       sidecarConnection: {
         cancelTranslation: vi.fn(),
@@ -232,7 +226,7 @@ describe('TranslationController', () => {
     expect(startTranslation.mock.calls[1]?.[0].texts).toEqual(['Updated version.']);
   });
 
-  it('preserves draft languages across model management and modal reopen without auto-translating', async () => {
+  it('lists only installed translation models without a model-management action', async () => {
     Modal.instances.length = 0;
     Setting.reset();
     const listeners: ((event: SidecarEvent) => void)[] = [];
@@ -242,16 +236,10 @@ describe('TranslationController', () => {
     });
     const firstModel = translationModel('hy-mt-1.8b', 'HY-MT 2 1.8B');
     const secondModel = translationModel('hy-mt-7b', 'HY-MT 2 7B');
-    let settings: PluginSettings = {
+    const settings: PluginSettings = {
       ...DEFAULT_PLUGIN_SETTINGS,
       selectedTranslationModel: selectionFor(firstModel),
     };
-    const saveSettings = vi.fn(async (next: PluginSettings) => {
-      settings = next;
-    });
-    const openModelPicker = vi.fn(async () => {
-      settings = { ...settings, selectedTranslationModel: selectionFor(secondModel) };
-    });
     const controller = new TranslationController({
       app: {} as never,
       canReadAloud: () => false,
@@ -261,13 +249,12 @@ describe('TranslationController', () => {
       modelManager: {
         getState: () => ({
           catalog: { models: [firstModel, secondModel] },
-          installedModels: [installedRecord(firstModel), installedRecord(secondModel)],
+          installedModels: [installedRecord(firstModel)],
           selectedTranslationModel: settings.selectedTranslationModel,
         }),
       } as never,
       onReadAloud: vi.fn(),
-      openModelPicker,
-      saveSettings,
+      saveSettings: vi.fn(async () => {}),
       sidecarConnection: {
         cancelTranslation: vi.fn(),
         startTranslation,
@@ -288,37 +275,13 @@ describe('TranslationController', () => {
     });
     await vi.waitFor(() => expect(Setting.buttonNamed('Replace')).toBeDefined());
 
-    const sourceSetting = Setting.instances.filter((setting) => setting.name === 'From').at(-1);
-    sourceSetting?.dropdownComponents[0]?.change('es');
-    await vi.waitFor(() =>
-      expect(settings).toMatchObject({
-        translationSourceLanguage: 'es',
-        translationTargetLanguage: 'en',
-      }),
-    );
-
     const modelSetting = Setting.instances
       .filter((setting) => setting.name === 'Translation model')
       .at(-1);
-    await modelSetting?.buttonComponents
-      .find((button) => button.text === 'Manage translation models')
-      ?.click();
-
-    await vi.waitFor(() => expect(Modal.instances).toHaveLength(2));
-    expect(startTranslation).toHaveBeenCalledOnce();
-    expect(openModelPicker).toHaveBeenCalledOnce();
-    expect(latestDropdownValue('From')).toBe('es');
-    expect(latestDropdownValue('To')).toBe('en');
-    expect(latestDropdownLabel('Translation model')).toBe('HY-MT 2 7B');
-
-    Modal.instances.at(-1)?.close();
-    controller.translateNote(editor as never);
-
-    expect(Modal.instances).toHaveLength(3);
-    expect(startTranslation).toHaveBeenCalledOnce();
-    expect(latestDropdownValue('From')).toBe('es');
-    expect(latestDropdownValue('To')).toBe('en');
-    expect(latestDropdownLabel('Translation model')).toBe('HY-MT 2 7B');
+    expect(
+      modelSetting?.dropdownComponents[0]?.selectEl.options.map((option) => option.label),
+    ).toEqual(['HY-MT 2 1.8B', 'Choose a translation model']);
+    expect(modelSetting?.buttonComponents).toHaveLength(0);
   });
 });
 
@@ -359,14 +322,4 @@ function installedRecord(model: ReturnType<typeof translationModel>) {
     modelId: model.modelId,
     runtimeId: model.runtimeId,
   };
-}
-
-function latestDropdownValue(settingName: string): string | undefined {
-  return Setting.instances.filter((setting) => setting.name === settingName).at(-1)
-    ?.dropdownComponents[0]?.selectEl.value;
-}
-
-function latestDropdownLabel(settingName: string): string | undefined {
-  return Setting.instances.filter((setting) => setting.name === settingName).at(-1)
-    ?.dropdownComponents[0]?.fittedLabel;
 }

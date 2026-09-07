@@ -829,7 +829,6 @@ export const ja = {
     'インストール済みの翻訳モデルは、この言語ペアに対応していません。',
   'translation.modal.incompleteModel':
     '翻訳モデルのファイルが不足しています。続行するには再インストールしてください。',
-  'translation.modal.installModel': '翻訳モデルをインストール',
   'translation.modal.translateAgain': 'もう一度翻訳',
   'translation.modal.retryReady':
     '翻訳設定が変更されました。プレビューを更新するには「もう一度翻訳」を選択してください。',
@@ -844,7 +843,7 @@ export const ja = {
   'translation.notice.copyFailed': '翻訳をコピーできませんでした。',
   'translation.notice.tooLong': '一度に翻訳できるのは最大 {count} 文字です。',
   'catalog.firefox_translations_release_2026_07.summary':
-    'Firefox で公開されたモデルを使用した、英語と7言語間の高速なローカル翻訳です。',
+    'Firefox で公開されたモデルを使う、必要な言語だけをダウンロードする高速なローカル翻訳です。',
   'catalog.family.firefox_translations.summary':
     'コンパクトな Bergamot エンジンと Firefox モデルでノートのテキストをローカル翻訳します。',
 } as const satisfies TranslationCatalog;

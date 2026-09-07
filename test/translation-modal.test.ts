@@ -23,6 +23,34 @@ const SNAPSHOT: TranslationSnapshot = {
 };
 
 describe('TranslationModal mutation safety', () => {
+  it('lists only installed translation models without a management action', () => {
+    Setting.reset();
+    const installedModel = createModalModel();
+    const modal = createModal({
+      editor: {
+        getValue: () => SNAPSHOT.source,
+        replaceRange: vi.fn(),
+      },
+      installedModelOptions: [installedModel],
+      jobModel: installedModel,
+      runTranslation: vi.fn(async () => ({
+        kind: 'translated' as const,
+        sourceUnitsKept: 0,
+        text: 'Traduzca esto.',
+      })),
+    });
+
+    modal.open();
+
+    const modelSetting = Setting.instances
+      .filter((setting) => setting.name === 'Translation model')
+      .at(-1);
+    expect(
+      modelSetting?.dropdownComponents[0]?.selectEl.options.map((option) => option.label),
+    ).toEqual(['Firefox Translations', 'Choose a translation model']);
+    expect(modelSetting?.buttonComponents).toHaveLength(0);
+  });
+
   it('keeps the read-aloud action hidden while translation is in progress', () => {
     Setting.reset();
     const modal = createModal({
@@ -369,7 +397,7 @@ describe('TranslationModal mutation safety', () => {
         getValue: () => SNAPSHOT.source,
         replaceRange: vi.fn(),
       },
-      modelOptions: [secondModel],
+      installedModelOptions: [secondModel],
       onModelChange,
       runTranslation,
     });
@@ -404,14 +432,14 @@ describe('TranslationModal mutation safety', () => {
         replaceRange: vi.fn(),
       },
       jobModel: null,
-      modelOptions: [installedModel],
+      installedModelOptions: [installedModel],
       onModelChange,
       onTranslateCurrent,
       runTranslation,
     });
 
     modal.open();
-    await vi.waitFor(() => expect(Setting.buttonNamed('Install translation model')).toBeDefined());
+    await vi.waitFor(() => expect(Setting.buttonNamed('Dismiss')).toBeDefined());
 
     const modelSetting = Setting.instances
       .filter((setting) => setting.name === 'Translation model')
@@ -431,6 +459,44 @@ describe('TranslationModal mutation safety', () => {
 
     await Setting.buttonNamed('Translate again').click();
     expect(onTranslateCurrent).toHaveBeenCalledWith('en', 'es');
+  });
+
+  it('offers the exact language pack instead of the whole Firefox bundle', async () => {
+    Setting.reset();
+    const model = createModalModel();
+    const onInstallPack = vi.fn(async () => {});
+    const onTranslateCurrent = vi.fn();
+    const modal = createModal({
+      configuration: { model, sourceLanguage: 'en', targetLanguage: 'es' },
+      editor: {
+        getValue: () => SNAPSHOT.source,
+        replaceRange: vi.fn(),
+      },
+      installedModelOptions: [model],
+      jobModel: model,
+      onInstallPack,
+      onTranslateCurrent,
+      runTranslation: vi.fn(async () => ({ kind: 'missing_model' as const })),
+      translationInstallRequirement: () => ({
+        artifactIds: ['en_es_model', 'en_es_vocab'],
+        downloadBytes: 41,
+        kind: 'pack' as const,
+      }),
+    });
+
+    modal.open();
+    await vi.waitFor(() =>
+      expect(Setting.buttonNamed('Download language pack · 41 B')).toBeDefined(),
+    );
+    expect(
+      (modal.contentEl as unknown as TestElement).findByText(
+        'English → Español needs a 41 B language download.',
+      ),
+    ).toBeDefined();
+
+    await Setting.buttonNamed('Download language pack · 41 B').click();
+    expect(onInstallPack).toHaveBeenCalledExactlyOnceWith(model, 'en', 'es');
+    expect(onTranslateCurrent).toHaveBeenCalledExactlyOnceWith('en', 'es');
   });
 
   it('reports partial results but never writes them into the note', async () => {
@@ -528,14 +594,15 @@ function createModal({
   configuration,
   editor,
   jobModel = createModalModel(),
-  modelOptions = [],
-  onManageModels = vi.fn(async () => {}),
+  installedModelOptions = [],
+  onInstallPack = vi.fn(async () => {}),
   onModelChange = vi.fn(async () => {}),
   onLanguageChange = vi.fn(async () => {}),
   onReadAloud = vi.fn(),
   onRestart = vi.fn(),
   onTranslateCurrent = vi.fn(),
   runTranslation,
+  translationInstallRequirement,
 }: {
   canReadAloud?: ConstructorParameters<typeof TranslationModal>[1]['canReadAloud'];
   configuration?: ConstructorParameters<typeof TranslationModal>[1]['configuration'];
@@ -543,15 +610,20 @@ function createModal({
     getValue: () => string;
     replaceRange: ReturnType<typeof vi.fn>;
   };
+  installedModelOptions?: ConstructorParameters<
+    typeof TranslationModal
+  >[1]['installedModelOptions'];
   jobModel?: CatalogModelRecord | null;
-  modelOptions?: ConstructorParameters<typeof TranslationModal>[1]['modelOptions'];
-  onManageModels?: ConstructorParameters<typeof TranslationModal>[1]['onManageModels'];
+  onInstallPack?: ConstructorParameters<typeof TranslationModal>[1]['onInstallPack'];
   onLanguageChange?: ConstructorParameters<typeof TranslationModal>[1]['onLanguageChange'];
   onModelChange?: ConstructorParameters<typeof TranslationModal>[1]['onModelChange'];
   onReadAloud?: ConstructorParameters<typeof TranslationModal>[1]['onReadAloud'];
   onRestart?: ConstructorParameters<typeof TranslationModal>[1]['onRestart'];
   onTranslateCurrent?: ConstructorParameters<typeof TranslationModal>[1]['onTranslateCurrent'];
   runTranslation: (options: TranslationJobRunOptions) => Promise<TranslationJobResult>;
+  translationInstallRequirement?: ConstructorParameters<
+    typeof TranslationModal
+  >[1]['translationInstallRequirement'];
 }): TranslationModal {
   const job = new TranslationJob({
     model: jobModel,
@@ -568,18 +640,20 @@ function createModal({
     },
     editor: editor as never,
     feedback: { show: vi.fn() },
+    installedModelOptions,
     job,
-    modelOptions,
     onApplied: vi.fn(),
+    onCancelPackInstall: vi.fn(async () => {}),
     onClosed: vi.fn(),
     onDismissed: vi.fn(),
     onLanguageChange,
-    onManageModels,
+    onInstallPack,
     onModelChange,
     onReadAloud,
     onTranslateCurrent,
     onRestart,
     snapshot: SNAPSHOT,
+    translationInstallRequirement: translationInstallRequirement ?? (() => ({ kind: 'ready' })),
   });
 }
 

@@ -831,7 +831,6 @@ export const nl = {
     'Je geïnstalleerde vertaalmodellen ondersteunen dit talenpaar niet.',
   'translation.modal.incompleteModel':
     'Er ontbreken bestanden in het vertaalmodel. Installeer het opnieuw om verder te gaan.',
-  'translation.modal.installModel': 'Vertaalmodel installeren',
   'translation.modal.translateAgain': 'Opnieuw vertalen',
   'translation.modal.retryReady':
     'De vertaalinstellingen zijn gewijzigd. Selecteer Opnieuw vertalen om het voorbeeld bij te werken.',
@@ -846,7 +845,7 @@ export const nl = {
   'translation.notice.copyFailed': 'Kon de vertaling niet kopiëren.',
   'translation.notice.tooLong': 'Vertaal maximaal {count} tekens per keer.',
   'catalog.firefox_translations_release_2026_07.summary':
-    'Snelle lokale vertaling tussen Engels en zeven talen met modellen die in Firefox zijn uitgebracht.',
+    'Snelle lokale vertaling met kleine taaldownloads op aanvraag en modellen die in Firefox zijn uitgebracht.',
   'catalog.family.firefox_translations.summary':
     'Vertaalt notitietekst lokaal met de compacte Bergamot-engine en Firefox-modellen.',
 } as const satisfies TranslationCatalog;

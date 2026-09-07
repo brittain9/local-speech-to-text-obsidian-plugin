@@ -834,7 +834,6 @@ export const pt = {
     'Os modelos de tradução instalados não suportam este par de idiomas.',
   'translation.modal.incompleteModel':
     'Faltam arquivos ao modelo de tradução. Reinstale-o para continuar.',
-  'translation.modal.installModel': 'Instalar modelo de tradução',
   'translation.modal.translateAgain': 'Traduzir novamente',
   'translation.modal.retryReady':
     'As definições de tradução foram alteradas. Selecione Traduzir novamente para atualizar a prévia.',
@@ -849,7 +848,7 @@ export const pt = {
   'translation.notice.copyFailed': 'Não foi possível copiar a tradução.',
   'translation.notice.tooLong': 'Traduza até {count} caracteres por vez.',
   'catalog.firefox_translations_release_2026_07.summary':
-    'Tradução local rápida entre inglês e sete idiomas com modelos publicados no Firefox.',
+    'Tradução local rápida com pequenos pacotes de idiomas sob demanda usando modelos lançados no Firefox.',
   'catalog.family.firefox_translations.summary':
     'Traduz o texto das notas localmente com o mecanismo compacto Bergamot e modelos do Firefox.',
 } satisfies TranslationCatalog;
