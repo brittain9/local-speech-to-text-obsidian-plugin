@@ -444,3 +444,23 @@ If Speech Kit sounds useful, give the project a star on GitHub. It helps more Ob
 ⭐ [Star Speech Kit on GitHub](https://github.com/brittain9/speech-kit-obsidian-plugin)
 
 ⬇️ [Install Speech Kit](https://obsidian.md/plugins?id=local-dictation) • 📝 [Release notes](https://github.com/brittain9/speech-kit-obsidian-plugin/releases/latest) • 💜 [Support the project](https://buymeacoffee.com/alexbrittaq)
+
+## September 7, 2026
+
+**Reactions:** Not yet recorded.
+
+🎙️ **Speech Kit 2026.9.1: a small translation and maintenance update**
+
+Thank you for 3,000 downloads! I really appreciate everyone trying Speech Kit in their vaults and sharing feedback.
+
+This is a small release with a few useful improvements:
+
+🌍 **More translation languages on demand** — choose from the expanded Firefox translation catalog and download only the language pair you need.
+
+🔊 **Separate read-aloud language** — choose the language Speech Kit should use when reading your notes aloud.
+
+⚙️ **Performance, security, and reliability improvements** — updated dependencies and a handful of behind-the-scenes fixes keep the plugin running smoothly.
+
+Everything remains local and works offline after setup.
+
+⬇️ [Install Speech Kit](https://obsidian.md/plugins?id=local-dictation) • 📝 [Release notes](https://github.com/brittain9/speech-kit-obsidian-plugin/releases/latest) • 💻 [GitHub](https://github.com/brittain9/speech-kit-obsidian-plugin) • 💜 [Support the project](https://buymeacoffee.com/alexbrittaq)

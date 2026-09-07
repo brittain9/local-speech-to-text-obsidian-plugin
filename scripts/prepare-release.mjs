@@ -19,7 +19,12 @@ See docs/release/cutting-a-release.md for section order and style. -->
 
 export async function prepareRelease(options) {
   const rootDir = resolve(options.rootDir ?? '.');
-  parseCalver(options.version, 'release version');
+  const releaseVersion = parseCalver(options.version, 'release version');
+  if (releaseVersion.micro === 0n) {
+    throw new Error(
+      `Release version ${options.version} must use a positive MICRO counter; start each month at .1.`,
+    );
+  }
   const metadata = await readReleaseMetadata(rootDir);
   const { minAppVersion: currentMinAppVersion, version: currentVersion } =
     validateReleaseMetadata(metadata);

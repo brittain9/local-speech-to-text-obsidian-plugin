@@ -104,15 +104,17 @@ describe('release workflow', () => {
     expect(notes).toContain('Replace this comment with curated release notes');
   });
 
-  it('allows zero micro for the first release of a later month', async () => {
+  it('requires the first release of a later month to use micro one', async () => {
     const rootDir = await createReleaseFixture();
 
-    await prepareRelease({ rootDir, version: '2026.8.0' });
+    await expect(prepareRelease({ rootDir, version: '2026.8.0' })).rejects.toThrow(
+      /positive MICRO counter/,
+    );
 
     const manifest = JSON.parse(await readFile(join(rootDir, 'manifest.json'), 'utf8'));
     const versions = JSON.parse(await readFile(join(rootDir, 'versions.json'), 'utf8'));
-    expect(manifest.version).toBe('2026.8.0');
-    expect(versions['2026.8.0']).toBe('1.11.5');
+    expect(manifest.version).toBe('2026.7.3');
+    expect(versions['2026.8.0']).toBeUndefined();
   });
 
   it('advances sidecar metadata and Cargo only for an explicit sidecar release', async () => {
