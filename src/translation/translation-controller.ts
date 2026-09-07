@@ -1,5 +1,4 @@
 import type { App, Editor, EditorPosition } from 'obsidian';
-import type { ModelPickerOptions } from '../models/manage-models-modal';
 import type { ModelInstallManager } from '../models/model-install-manager';
 import { type CatalogModelRecord, matchesModelTriple } from '../models/model-management-types';
 import type { PluginSettings } from '../settings/plugin-settings';
@@ -102,7 +101,6 @@ interface TranslationControllerDependencies {
   logger: PluginLogger;
   modelManager: ModelInstallManager;
   onReadAloud: (text: string, language: TranslationLanguage) => Promise<void> | void;
-  openModelPicker: (options?: ModelPickerOptions) => Promise<void>;
   saveSettings: (settings: PluginSettings) => Promise<void>;
   sidecarConnection?: Pick<
     SidecarConnection,
@@ -218,7 +216,6 @@ export class TranslationController {
       job: active.job,
       configuration: active.configuration,
       installedModelOptions: this.installedTranslationModels(),
-      modelOptions: this.translationModels(),
       snapshot: active.snapshot,
       onApplied: () => this.clearActive(),
       onDismissed: () => this.clearActive(),
@@ -227,29 +224,6 @@ export class TranslationController {
           this.activeModal = null;
           if (this.active === active)
             this.dependencies.setDetachedStatus?.(active.job.state(), () => this.openModal());
-        }
-      },
-      onManageModels: async () => {
-        modal.close();
-        try {
-          await this.dependencies.openModelPicker({ initialTask: 'translation' });
-          if (this.active !== active) return;
-          const nextModel = selectedTranslationModel(
-            this.dependencies.modelManager.getState(),
-            this.dependencies.getSettings(),
-          );
-          if (!sameTranslationModel(active.configuration.model, nextModel)) {
-            const pair = resolveTranslationLanguages(
-              this.dependencies.getSettings().dictationLanguage,
-              active.configuration.sourceLanguage,
-              active.configuration.targetLanguage,
-              nextModel,
-            );
-            active.configuration = { model: nextModel, ...pair };
-            await this.persistTranslationLanguages(pair.sourceLanguage, pair.targetLanguage);
-          }
-        } finally {
-          if (this.active === active) this.openModal();
         }
       },
       onLanguageChange: (sourceLanguage, targetLanguage) => {
@@ -343,11 +317,6 @@ export class TranslationController {
         ),
     );
   }
-  private translationModels(): CatalogModelRecord[] {
-    return this.dependencies.modelManager
-      .getState()
-      .catalog.models.filter((model) => model.task === 'translation');
-  }
   private modelIsInstalled(model: CatalogModelRecord): boolean {
     return this.dependencies.modelManager
       .getState()
@@ -440,13 +409,6 @@ function selectedTranslationModel(
         model.modelId === selection.modelId,
     ) ?? null
   );
-}
-function sameTranslationModel(
-  left: CatalogModelRecord | null,
-  right: CatalogModelRecord | null,
-): boolean {
-  if (left === null || right === null) return left === right;
-  return matchesModelTriple(left, right.runtimeId, right.familyId, right.modelId);
 }
 function createTranslationId(): string {
   return (

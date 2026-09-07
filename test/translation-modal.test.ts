@@ -23,6 +23,34 @@ const SNAPSHOT: TranslationSnapshot = {
 };
 
 describe('TranslationModal mutation safety', () => {
+  it('lists only installed translation models without a management action', () => {
+    Setting.reset();
+    const installedModel = createModalModel();
+    const modal = createModal({
+      editor: {
+        getValue: () => SNAPSHOT.source,
+        replaceRange: vi.fn(),
+      },
+      installedModelOptions: [installedModel],
+      jobModel: installedModel,
+      runTranslation: vi.fn(async () => ({
+        kind: 'translated' as const,
+        sourceUnitsKept: 0,
+        text: 'Traduzca esto.',
+      })),
+    });
+
+    modal.open();
+
+    const modelSetting = Setting.instances
+      .filter((setting) => setting.name === 'Translation model')
+      .at(-1);
+    expect(
+      modelSetting?.dropdownComponents[0]?.selectEl.options.map((option) => option.label),
+    ).toEqual(['Firefox Translations', 'Choose a translation model']);
+    expect(modelSetting?.buttonComponents).toHaveLength(0);
+  });
+
   it('keeps the read-aloud action hidden while translation is in progress', () => {
     Setting.reset();
     const modal = createModal({
@@ -369,7 +397,7 @@ describe('TranslationModal mutation safety', () => {
         getValue: () => SNAPSHOT.source,
         replaceRange: vi.fn(),
       },
-      modelOptions: [secondModel],
+      installedModelOptions: [secondModel],
       onModelChange,
       runTranslation,
     });
@@ -404,14 +432,14 @@ describe('TranslationModal mutation safety', () => {
         replaceRange: vi.fn(),
       },
       jobModel: null,
-      modelOptions: [installedModel],
+      installedModelOptions: [installedModel],
       onModelChange,
       onTranslateCurrent,
       runTranslation,
     });
 
     modal.open();
-    await vi.waitFor(() => expect(Setting.buttonNamed('Install translation model')).toBeDefined());
+    await vi.waitFor(() => expect(Setting.buttonNamed('Dismiss')).toBeDefined());
 
     const modelSetting = Setting.instances
       .filter((setting) => setting.name === 'Translation model')
@@ -566,9 +594,7 @@ function createModal({
   configuration,
   editor,
   jobModel = createModalModel(),
-  modelOptions = [],
-  installedModelOptions = modelOptions,
-  onManageModels = vi.fn(async () => {}),
+  installedModelOptions = [],
   onInstallPack = vi.fn(async () => {}),
   onModelChange = vi.fn(async () => {}),
   onLanguageChange = vi.fn(async () => {}),
@@ -588,8 +614,6 @@ function createModal({
     typeof TranslationModal
   >[1]['installedModelOptions'];
   jobModel?: CatalogModelRecord | null;
-  modelOptions?: ConstructorParameters<typeof TranslationModal>[1]['modelOptions'];
-  onManageModels?: ConstructorParameters<typeof TranslationModal>[1]['onManageModels'];
   onInstallPack?: ConstructorParameters<typeof TranslationModal>[1]['onInstallPack'];
   onLanguageChange?: ConstructorParameters<typeof TranslationModal>[1]['onLanguageChange'];
   onModelChange?: ConstructorParameters<typeof TranslationModal>[1]['onModelChange'];
@@ -618,14 +642,12 @@ function createModal({
     feedback: { show: vi.fn() },
     installedModelOptions,
     job,
-    modelOptions,
     onApplied: vi.fn(),
     onCancelPackInstall: vi.fn(async () => {}),
     onClosed: vi.fn(),
     onDismissed: vi.fn(),
     onLanguageChange,
     onInstallPack,
-    onManageModels,
     onModelChange,
     onReadAloud,
     onTranslateCurrent,

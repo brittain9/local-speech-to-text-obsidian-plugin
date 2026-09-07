@@ -330,7 +330,6 @@ export default class LocalSttPlugin extends Plugin {
       logger: this.logger,
       modelManager: this.requireModelInstallManager(),
       onReadAloud: (text, language) => this.requireReadAloudController().readText(text, language),
-      openModelPicker: () => this.openModelPicker({ initialTask: 'translation' }),
       saveSettings: (nextSettings) => this.updateSettings(nextSettings),
       setDetachedStatus: (state, reopen) => this.renderTranslationStatus(state, reopen),
       sidecarConnection: this.requireSidecarConnection(),
