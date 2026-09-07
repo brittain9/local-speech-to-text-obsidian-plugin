@@ -829,7 +829,6 @@ export const ja = {
     'インストール済みの翻訳モデルは、この言語ペアに対応していません。',
   'translation.modal.incompleteModel':
     '翻訳モデルのファイルが不足しています。続行するには再インストールしてください。',
-  'translation.modal.installModel': '翻訳モデルをインストール',
   'translation.modal.translateAgain': 'もう一度翻訳',
   'translation.modal.retryReady':
     '翻訳設定が変更されました。プレビューを更新するには「もう一度翻訳」を選択してください。',

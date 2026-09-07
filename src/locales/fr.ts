@@ -838,7 +838,6 @@ export const fr = {
     'Vos modèles de traduction installés ne prennent pas en charge cette paire de langues.',
   'translation.modal.incompleteModel':
     'Il manque des fichiers au modèle de traduction. Réinstallez-le pour continuer.',
-  'translation.modal.installModel': 'Installer le modèle de traduction',
   'translation.modal.translateAgain': 'Traduire à nouveau',
   'translation.modal.retryReady':
     'Les réglages de traduction ont changé. Sélectionnez Traduire à nouveau pour actualiser l’aperçu.',

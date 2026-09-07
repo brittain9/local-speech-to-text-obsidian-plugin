@@ -834,7 +834,6 @@ export const pt = {
     'Os modelos de tradução instalados não suportam este par de idiomas.',
   'translation.modal.incompleteModel':
     'Faltam arquivos ao modelo de tradução. Reinstale-o para continuar.',
-  'translation.modal.installModel': 'Instalar modelo de tradução',
   'translation.modal.translateAgain': 'Traduzir novamente',
   'translation.modal.retryReady':
     'As definições de tradução foram alteradas. Selecione Traduzir novamente para atualizar a prévia.',

@@ -147,7 +147,6 @@ export const en = {
   'translation.modal.failed': 'Translation failed.',
   'translation.modal.missingModel': 'Install the local translation pack to use this language pair.',
   'translation.modal.chooseModel': 'Choose a translation model',
-  'translation.modal.modelDownloadRequired': '{model} · Download required',
   'translation.modal.languagePackRequired': '{source} → {target} needs a {size} language download.',
   'translation.modal.downloadLanguagePack': 'Download language pack · {size}',
   'translation.modal.downloadingLanguagePack': 'Downloading language pack…',
@@ -157,7 +156,6 @@ export const en = {
     'Your installed translation models do not support this language pair.',
   'translation.modal.incompleteModel':
     'The translation model is missing files. Reinstall it to continue.',
-  'translation.modal.installModel': 'Install translation model',
   'translation.modal.translateAgain': 'Translate again',
   'translation.modal.retryReady':
     'Translation setup changed. Select Translate again to update the preview.',

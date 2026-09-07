@@ -845,7 +845,6 @@ export const de = {
     'Deine installierten Übersetzungsmodelle unterstützen dieses Sprachenpaar nicht.',
   'translation.modal.incompleteModel':
     'Dem Übersetzungsmodell fehlen Dateien. Installiere es neu, um fortzufahren.',
-  'translation.modal.installModel': 'Übersetzungsmodell installieren',
   'translation.modal.translateAgain': 'Erneut übersetzen',
   'translation.modal.retryReady':
     'Die Übersetzungseinstellungen wurden geändert. Wählen Sie „Erneut übersetzen“, um die Vorschau zu aktualisieren.',

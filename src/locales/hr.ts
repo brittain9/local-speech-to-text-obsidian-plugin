@@ -148,7 +148,6 @@ export const hr = {
     'Instalirajte paket za lokalni prijevod da biste koristili ovaj par jezika.',
   'translation.modal.incompleteModel':
     'Modelu za prijevod nedostaju datoteke. Ponovno ga instalirajte za nastavak.',
-  'translation.modal.installModel': 'Instaliraj model za prijevod',
   'translation.modal.translateAgain': 'Prevedi ponovno',
   'translation.modal.retryReady':
     'Postavke prijevoda su promijenjene. Odaberite Prevedi ponovno za ažuriranje pregleda.',

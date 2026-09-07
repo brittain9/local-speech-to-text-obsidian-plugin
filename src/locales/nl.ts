@@ -831,7 +831,6 @@ export const nl = {
     'Je geïnstalleerde vertaalmodellen ondersteunen dit talenpaar niet.',
   'translation.modal.incompleteModel':
     'Er ontbreken bestanden in het vertaalmodel. Installeer het opnieuw om verder te gaan.',
-  'translation.modal.installModel': 'Vertaalmodel installeren',
   'translation.modal.translateAgain': 'Opnieuw vertalen',
   'translation.modal.retryReady':
     'De vertaalinstellingen zijn gewijzigd. Selecteer Opnieuw vertalen om het voorbeeld bij te werken.',
